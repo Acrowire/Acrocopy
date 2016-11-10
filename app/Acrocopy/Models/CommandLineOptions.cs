@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Acrocopy.Models
 {
+    /// <summary>
+    /// To cover source, destination, verbose and time examples
+    /// </summary>
     public class CommandLineOptions
     {
         [Option("t", HelpText = "Use int[type], example 1h, 30m - types include h - hour, m - minute, s - second", DefaultValue = "1h" )]
