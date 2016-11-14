@@ -21,5 +21,7 @@ namespace Acrocopy.Models
         public string DestinationDirectory { get; set; }
         [Option("v", HelpText = "Print details during execution")]
         public bool Verbose { get; set; }
+        [Option("r", HelpText = "Recursive for Sub-Directories", DefaultValue = false)]
+        public bool RecursiveSubDirectories { get; set; }
     }
 }

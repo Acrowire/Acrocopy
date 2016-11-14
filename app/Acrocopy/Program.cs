@@ -12,6 +12,8 @@ namespace Acrocopy
 {
     public class Program
     {
+        private static List<DirectoryInfo> processDirectories { get; set; } = new List<DirectoryInfo>();
+
         static void Main(string[] args)
         {
             var options = new CommandLineOptions();
@@ -19,18 +21,41 @@ namespace Acrocopy
 
             if(parser.ParseArguments(args, options))
             {
-                var results = DirectorySearch(options);
+                processDirectories.Add(new DirectoryInfo(options.SourceDirectory));
 
-                foreach(var i in results) {
-                    var destination = Path.Combine(options.DestinationDirectory, i.Name);
-                    if(options.Verbose)
-                        Console.WriteLine(string.Format("{0} => {1}", i.FullName, destination));
-                    File.Copy(i.FullName, destination);
-                }
+                for(int i = 0; i < processDirectories.Count; i++)
+                    ProcessDirectory(options, processDirectories[i]);
             }
 
             Console.WriteLine("Completed...");
-            Console.ReadLine();
+        }
+
+        private static void ProcessDirectory(CommandLineOptions options, DirectoryInfo dInfo)
+        {
+            var results = DirectorySearch(options, dInfo);
+
+            var subDirectory = dInfo.FullName.Replace(options.SourceDirectory, string.Empty);
+
+            if(subDirectory.IndexOf('\\') == 0)
+                subDirectory = subDirectory.Substring(1);
+
+            var destDirectory = Path.Combine(options.DestinationDirectory, subDirectory);
+
+            if (!Directory.Exists(destDirectory))
+                Directory.CreateDirectory(destDirectory);
+
+            foreach (var i in results)
+            {
+                var destination = Path.Combine(destDirectory, i.Name);
+                if (options.Verbose)
+                    Console.WriteLine(string.Format("{0} => {1}", i.FullName, destination));
+                File.Copy(i.FullName, destination);
+            }
+        }
+
+        private static List<DirectoryInfo> GetDirectoriesToProcess(DirectoryInfo dInfo)
+        {
+            return dInfo.GetDirectories().ToList();
         }
 
         /// <summary>
@@ -38,9 +63,12 @@ namespace Acrocopy
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        private static List<FileInfo> DirectorySearch(CommandLineOptions options)
+        private static List<FileInfo> DirectorySearch(CommandLineOptions options, DirectoryInfo dInfo)
         {
-            var dinfo = new DirectoryInfo(options.SourceDirectory);
+            if (options.RecursiveSubDirectories)
+                processDirectories.AddRange(GetDirectoriesToProcess(dInfo));
+
+            var dinfo = new DirectoryInfo(dInfo.FullName);
             var finfo = dinfo.GetFiles("*.*").ToList();
             
             var results = finfo.Where(f => (DateTime.Now - f.LastWriteTime) <= ResolveTimeSpan(options));
